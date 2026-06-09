@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Test</title>
+</head>
+<body style="font-family: sans-serif; padding: 24px; font-size: 18px;">
+  <h1>iPhone Voice Test</h1>
+  <button id="listenBtn" style="font-size: 20px; padding: 16px 24px;">🎤 Tap and talk</button>
+  <p id="heard">…</p>
+  <button id="speakBtn" style="font-size: 20px; padding: 16px 24px;">🔊 Make it talk</button>
+
+  <script>
+    // ---- PART 1: LISTEN (your voice -> text) ----
+    const listenBtn = document.getElementById('listenBtn');
+    const heard = document.getElementById('heard');
+
+    // iPhone Safari only exposes this under the "webkit" prefix, hence the fallback:
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    listenBtn.addEventListener('click', () => {
+      if (!SpeechRecognition) {
+        heard.textContent = 'This browser does not support speech recognition.';
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';        // what language to listen for
+      recognition.interimResults = false; // only give us the final result
+
+      recognition.onstart  = () => { heard.textContent = 'Listening…'; };
+      recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript; // the words it heard
+        heard.textContent = 'You said: ' + text;
+      };
+      recognition.onerror  = (event) => { heard.textContent = 'Error: ' + event.error; };
+
+      recognition.start(); // must be triggered by a tap — iOS requires a user gesture
+    });
+
+    // ---- PART 2: SPEAK (text -> voice) ----
+    const speakBtn = document.getElementById('speakBtn');
+    speakBtn.addEventListener('click', () => {
+      const utterance = new SpeechSynthesisUtterance('Hello Conner, your phone can talk.');
+      utterance.lang = 'en-US';
+      speechSynthesis.speak(utterance);
+    });
+  </script>
+</body>
+</html>
