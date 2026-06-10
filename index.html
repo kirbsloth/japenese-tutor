@@ -37,6 +37,7 @@
     async function send() {
       const message = input.value.trim();
       if (!message) return;
+      speechSynthesis.speak(new SpeechSynthesisUtterance(''));  // wakes up iOS speech on the tap
 
       chat.textContent += "You: " + message + "\n\n";
       input.value = "";
