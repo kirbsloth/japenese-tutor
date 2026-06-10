@@ -27,10 +27,12 @@
 
     // Reads text aloud automatically — the speechSynthesis we proved works on day one.
     function speak(text) {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      speechSynthesis.speak(u);
-    }
+  speechSynthesis.cancel();              // clear anything stuck in the queue
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = 0.95;
+  speechSynthesis.speak(u);
+}
 
     async function send() {
       const message = input.value.trim();
