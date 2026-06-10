@@ -3,48 +3,65 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Voice Test</title>
+  <title>Japanese Tutor</title>
 </head>
-<body style="font-family: sans-serif; padding: 24px; font-size: 18px;">
-  <h1>iPhone Voice Test</h1>
-  <button id="listenBtn" style="font-size: 20px; padding: 16px 24px;">🎤 Tap and talk</button>
-  <p id="heard">…</p>
-  <button id="speakBtn" style="font-size: 20px; padding: 16px 24px;">🔊 Make it talk</button>
+<body style="font-family: sans-serif; padding: 24px; font-size: 18px; max-width: 600px; margin: auto;">
+  <h1>Japanese Tutor</h1>
+
+  <!-- Type OR use your keyboard's mic button in this box -->
+  <textarea id="input" rows="2" style="width: 100%; font-size: 18px; padding: 10px;"
+            placeholder="Type or tap the mic on your keyboard..."></textarea>
+
+  <button id="sendBtn" style="font-size: 20px; padding: 14px 24px; margin-top: 10px;">Send</button>
+
+  <!-- Conversation shows up here -->
+  <div id="chat" style="margin-top: 20px; white-space: pre-wrap;"></div>
 
   <script>
-    // ---- PART 1: LISTEN (your voice -> text) ----
-    const listenBtn = document.getElementById('listenBtn');
-    const heard = document.getElementById('heard');
+    // ⬇️⬇️ CHANGE THIS to YOUR laptop's address from ipconfig (the 192.168.x.x one) ⬇️⬇️
+    const BRAIN_URL = "https://clunky-guy-calorie.ngrok-free.dev/docs";
 
-    // iPhone Safari only exposes this under the "webkit" prefix, hence the fallback:
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const input   = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+    const chat    = document.getElementById('chat');
 
-    listenBtn.addEventListener('click', () => {
-      if (!SpeechRecognition) {
-        heard.textContent = 'This browser does not support speech recognition.';
-        return;
+    // Reads text aloud automatically — the speechSynthesis we proved works on day one.
+    function speak(text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      speechSynthesis.speak(u);
+    }
+
+    async function send() {
+      const message = input.value.trim();
+      if (!message) return;
+
+      chat.textContent += "You: " + message + "\n\n";
+      input.value = "";
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Thinking...";
+
+      try {
+        // THE NEW PART: send the message to your Python brain and wait for Claude's reply.
+        const res = await fetch(BRAIN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message })  // matches ChatRequest in main.py
+        });
+        const data = await res.json();   // { "reply": "..." } from your server
+        const reply = data.reply;
+
+        chat.textContent += "Tutor: " + reply + "\n\n";
+        speak(reply);                    // 🔊 auto-reads the reply — no toggling, ever
+      } catch (err) {
+        chat.textContent += "[Error reaching the brain: " + err.message + "]\n\n";
       }
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'en-US';        // what language to listen for
-      recognition.interimResults = false; // only give us the final result
 
-      recognition.onstart  = () => { heard.textContent = 'Listening…'; };
-      recognition.onresult = (event) => {
-        const text = event.results[0][0].transcript; // the words it heard
-        heard.textContent = 'You said: ' + text;
-      };
-      recognition.onerror  = (event) => { heard.textContent = 'Error: ' + event.error; };
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send";
+    }
 
-      recognition.start(); // must be triggered by a tap — iOS requires a user gesture
-    });
-
-    // ---- PART 2: SPEAK (text -> voice) ----
-    const speakBtn = document.getElementById('speakBtn');
-    speakBtn.addEventListener('click', () => {
-      const utterance = new SpeechSynthesisUtterance('Hello Conner, your phone can talk.');
-      utterance.lang = 'en-US';
-      speechSynthesis.speak(utterance);
-    });
+    sendBtn.addEventListener('click', send);
   </script>
 </body>
 </html>
