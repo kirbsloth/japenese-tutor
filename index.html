@@ -28,10 +28,26 @@
     
     // Reads text aloud automatically — the speechSynthesis we proved works on day one.
     function speak(text) {
-  speechSynthesis.cancel();              // clear anything stuck in the queue
+  speechSynthesis.cancel();
+
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
   u.rate = 0.95;
+
+  // Does the text contain Japanese characters? (hiragana / katakana / kanji)
+  const hasJapanese = /[\u3040-\u30ff\u4e00-\u9faf]/.test(text);
+
+  const voices = speechSynthesis.getVoices();
+  if (hasJapanese) {
+    const jaVoice = voices.find(v => v.lang === 'ja-JP');
+    if (jaVoice) u.voice = jaVoice;
+    u.lang = 'ja-JP';
+  } else {
+    const enVoice = voices.find(v => v.name.includes('Samantha'))
+                 || voices.find(v => v.lang === 'en-US');
+    if (enVoice) u.voice = enVoice;
+    u.lang = 'en-US';
+  }
+
   speechSynthesis.speak(u);
 }
 
