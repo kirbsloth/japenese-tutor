@@ -13,8 +13,6 @@
             placeholder="Type or tap the mic on your keyboard..."></textarea>
 
   <button id="sendBtn" style="font-size: 20px; padding: 14px 24px; margin-top: 10px;">Send</button>
-  <button id="listVoicesBtn" style="font-size: 16px; padding: 10px 16px; margin-top: 10px;">List my voices</button>
-  <div id="voiceList" style="margin-top: 12px; font-size: 14px; white-space: pre-wrap;"></div>
 
   <!-- Conversation shows up here -->
   <div id="chat" style="margin-top: 20px; white-space: pre-wrap;"></div>
@@ -34,16 +32,19 @@
     function speak(text) {
   speechSynthesis.cancel();
 
-  // Remove the romaji (text in single *asterisks*) so it's not read aloud —
-  // you read romaji with your eyes; your ears get the real Japanese + the meaning.
-  let spoken = text.replace(/\*([^*]+)\*/g, '');   // delete *romaji* bits
-  spoken = spoken.replace(/[*_#`]/g, '');          // strip leftover markdown symbols
+  // Don't read the romaji (single *asterisks*) aloud — that's for your eyes.
+  let spoken = text.replace(/\*([^*]+)\*/g, '');
+  spoken = spoken.replace(/[*_#`]/g, '');
 
+  // Split into Japanese vs non-Japanese runs so each gets the right voice.
   const segments = spoken.match(/[\u3040-\u30ff\u4e00-\u9faf]+|[^\u3040-\u30ff\u4e00-\u9faf]+/g) || [spoken];
 
   const voices = speechSynthesis.getVoices();
-  const jaVoice = voices.find(v => v.lang === 'ja-JP');
-  const enVoice = voices.find(v => v.lang === 'en-US');
+  // Match YOUR downloaded voices by name:
+  const enVoice = voices.find(v => v.name.includes('Ava'))
+               || voices.find(v => v.lang === 'en-US');     // fallback if Ava not found
+  const jaVoice = voices.find(v => v.name.includes('Kyoko'))
+               || voices.find(v => v.lang === 'ja-JP');     // fallback if Kyoko not found
 
   segments.forEach(segment => {
     const trimmed = segment.trim();
@@ -100,15 +101,6 @@
 }
 
     sendBtn.addEventListener('click', send);
-
-  document.getElementById('listVoicesBtn').addEventListener('click', () => {
-  const voices = speechSynthesis.getVoices();
-  const list = voices
-    .map((v, i) => i + ": " + v.name + "  (" + v.lang + ")")
-    .join("\n");
-  document.getElementById('voiceList').textContent =
-    "Found " + voices.length + " voices:\n\n" + list;
-});
     
   </script>
 </body>
