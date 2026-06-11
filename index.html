@@ -53,14 +53,16 @@
     if (!trimmed) return;
 
     const u = new SpeechSynthesisUtterance(trimmed + ',');
-    u.rate = 1.1;
+    
     
     const isJa = /[\u3040-\u30ff\u4e00-\u9faf]/.test(trimmed);
     if (isJa) {
       if (jaVoice) u.voice = jaVoice;
+      u.rate = .9;
       u.lang = 'ja-JP';
     } else {
       if (enVoice) u.voice = enVoice;
+      u.rate = 1.1;
       u.lang = 'en-US';
     }
 
