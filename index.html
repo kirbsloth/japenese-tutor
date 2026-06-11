@@ -31,25 +31,33 @@
     function speak(text) {
   speechSynthesis.cancel();
 
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = 0.95;
-
-  // Does the text contain Japanese characters? (hiragana / katakana / kanji)
-  const hasJapanese = /[\u3040-\u30ff\u4e00-\u9faf]/.test(text);
+  // Split into chunks, each tagged by language, so we can voice each correctly.
+  // We break on sentence-ish boundaries AND on runs of Japanese vs non-Japanese.
+  const segments = text.match(/[\u3040-\u30ff\u4e00-\u9faf]+|[^\u3040-\u30ff\u4e00-\u9faf]+/g) || [text];
 
   const voices = speechSynthesis.getVoices();
-  if (hasJapanese) {
-    const jaVoice = voices.find(v => v.lang === 'ja-JP');
-    if (jaVoice) u.voice = jaVoice;
-    u.lang = 'ja-JP';
-  } else {
-    const enVoice = voices.find(v => v.name.includes('Samantha'))
-                 || voices.find(v => v.lang === 'en-US');
-    if (enVoice) u.voice = enVoice;
-    u.lang = 'en-US';
-  }
+  const jaVoice = voices.find(v => v.lang === 'ja-JP');
+  const enVoice = voices.find(v => v.name.includes('Samantha'))
+               || voices.find(v => v.lang === 'en-US');
 
-  speechSynthesis.speak(u);
+  segments.forEach(segment => {
+    const trimmed = segment.trim();
+    if (!trimmed) return;  // skip empty bits
+
+    const u = new SpeechSynthesisUtterance(trimmed);
+    u.rate = 0.95;
+
+    const isJa = /[\u3040-\u30ff\u4e00-\u9faf]/.test(trimmed);
+    if (isJa) {
+      if (jaVoice) u.voice = jaVoice;
+      u.lang = 'ja-JP';
+    } else {
+      if (enVoice) u.voice = enVoice;
+      u.lang = 'en-US';
+    }
+
+    speechSynthesis.speak(u);  // queues them — they play in order, one after another
+  });
 }
 
     async function send() {
