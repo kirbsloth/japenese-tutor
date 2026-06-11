@@ -13,6 +13,8 @@
             placeholder="Type or tap the mic on your keyboard..."></textarea>
 
   <button id="sendBtn" style="font-size: 20px; padding: 14px 24px; margin-top: 10px;">Send</button>
+  <button id="listVoicesBtn" style="font-size: 16px; padding: 10px 16px; margin-top: 10px;">List my voices</button>
+  <div id="voiceList" style="margin-top: 12px; font-size: 14px; white-space: pre-wrap;"></div>
 
   <!-- Conversation shows up here -->
   <div id="chat" style="margin-top: 20px; white-space: pre-wrap;"></div>
@@ -99,7 +101,19 @@
   sendBtn.disabled = false;
   sendBtn.textContent = "Send";
 }
-
+    document.getElementById('listVoicesBtn').addEventListener('click', () => {
+      const voices = speechSynthesis.getVoices();
+      if (voices.length === 0) {
+        document.getElementById('voiceList').textContent = "No voices loaded yet — tap again.";
+        return;
+      }
+      const list = voices
+        .map((v, i) => i + ": " + v.name + "  (" + v.lang + ")")
+        .join("\n");
+      document.getElementById('voiceList').textContent =
+        "Found " + voices.length + " voices:\n\n" + list;
+    });
+    
     sendBtn.addEventListener('click', send);
     
   </script>
