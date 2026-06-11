@@ -37,7 +37,7 @@
 
   const voices = speechSynthesis.getVoices();
   const jaVoice = voices.find(v => v.lang === 'ja-JP');
-  const enVoice = voices.find(v => v.name.includes('Samantha'))
+  const enVoice = voices.find(v => v.name.includes('Siri Voice 4'))
                || voices.find(v => v.lang === 'en-US');
 
   segments.forEach(segment => {
