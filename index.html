@@ -43,7 +43,7 @@
 
   const voices = speechSynthesis.getVoices();
   // Match YOUR downloaded voices by name:
-  const enVoice = voices.find(v => v.name.includes('Ava'))
+  const enVoice = voices.find(v => v.name.includes('Moira'))
                || voices.find(v => v.lang === 'en-US');     // fallback if Ava not found
   const jaVoice = voices.find(v => v.name.includes('Kyoko'))
                || voices.find(v => v.lang === 'ja-JP');     // fallback if Kyoko not found
