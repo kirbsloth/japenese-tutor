@@ -44,7 +44,7 @@
     const trimmed = segment.trim();
     if (!trimmed) return;  // skip empty bits
 
-    const u = new SpeechSynthesisUtterance(trimmed);
+    const u = new SpeechSynthesisUtterance(trimmed + ',');
     u.rate = 0.95;
 
     const isJa = /[\u3040-\u30ff\u4e00-\u9faf]/.test(trimmed);
