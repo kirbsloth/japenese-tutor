@@ -20,7 +20,7 @@
   <div id="chat" style="margin-top: 20px; white-space: pre-wrap;"></div>
 
   <script>
-    // ⬇️⬇️ CHANGE THIS to YOUR laptop's address from ipconfig (the 192.168.x.x one) ⬇️⬇️
+   // ⬇️ Your ngrok URL + /chat ⬇️
     const BRAIN_URL = "https://clunky-guy-calorie.ngrok-free.dev/chat";
 
     const input   = document.getElementById('input');
@@ -29,100 +29,83 @@
     let conversation = [];   // grows as you chat — this is the app's memory
 
     speechSynthesis.getVoices();
-    
-    // Reads text aloud automatically — the speechSynthesis we proved works on day one.
-   function speak(text) {
-  speechSynthesis.cancel();
 
-  // Strip romaji (single *asterisks*) and leftover markdown so they're not read aloud.
-  let spoken = text.replace(/\*\*([^*]+)\*\*/g, '$1');  // keep **Japanese** content, drop the **
-  spoken = spoken.replace(/\*([^*]+)\*/g, '');          // delete *romaji* entirely
-  spoken = spoken.replace(/[*_#`]/g, '');               // strip leftover symbols
+    function speak(text) {
+      speechSynthesis.cancel();
 
-  // Split into Japanese vs non-Japanese runs.
-  const segments = (spoken.match(/[\u3040-\u30ff\u4e00-\u9faf]+|[^\u3040-\u30ff\u4e00-\u9faf]+/g) || [spoken])
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+      // Strip romaji (single *asterisks*) and leftover markdown so they're not read aloud.
+      let spoken = text.replace(/\*\*([^*]+)\*\*/g, '$1');  // keep **Japanese** content, drop the **
+      spoken = spoken.replace(/\*([^*]+)\*/g, '');          // delete *romaji* entirely
+      spoken = spoken.replace(/[*_#`]/g, '');               // strip leftover symbols
 
-  const voices = speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.name.includes('Moira')) || voices.find(v => v.lang === 'en-US');
-  const jaVoice = voices.find(v => v.name.includes('Kyoko')) || voices.find(v => v.lang === 'ja-JP');
+      // Split into Japanese vs non-Japanese runs.
+      const segments = (spoken.match(/[\u3040-\u30ff\u4e00-\u9faf]+|[^\u3040-\u30ff\u4e00-\u9faf]+/g) || [spoken])
+        .map(s => s.trim())
+        .filter(s => s.length > 0);
 
-  function speak(text) {
-  speechSynthesis.cancel();
+      const voices = speechSynthesis.getVoices();
+      const enVoice = voices.find(v => v.name.includes('Moira')) || voices.find(v => v.lang === 'en-US');
+      const jaVoice = voices.find(v => v.name.includes('Kyoko')) || voices.find(v => v.lang === 'ja-JP');
 
-  // Strip romaji (single *asterisks*) and leftover markdown so they're not read aloud.
-  let spoken = text.replace(/\*\*([^*]+)\*\*/g, '$1');  // keep **Japanese** content, drop the **
-  spoken = spoken.replace(/\*([^*]+)\*/g, '');          // delete *romaji* entirely
-  spoken = spoken.replace(/[*_#`]/g, '');               // strip leftover symbols
+      // Speak segments ONE AT A TIME — wait for each to finish before the next.
+      let i = 0;
+      function speakNext() {
+        if (i >= segments.length) return;
+        const seg = segments[i];
+        i++;
 
-  // Split into Japanese vs non-Japanese runs.
-  const segments = (spoken.match(/[\u3040-\u30ff\u4e00-\u9faf]+|[^\u3040-\u30ff\u4e00-\u9faf]+/g) || [spoken])
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
+        const u = new SpeechSynthesisUtterance(seg);
+        const isJa = /[\u3040-\u30ff\u4e00-\u9faf]/.test(seg);
+        if (isJa) {
+          if (jaVoice) u.voice = jaVoice;
+          u.lang = 'ja-JP';
+          u.rate = 0.9;   // slower Japanese for learning
+        } else {
+          if (enVoice) u.voice = enVoice;
+          u.lang = 'en-US';
+          u.rate = 1.1;   // faster English
+        }
 
-  const voices = speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.name.includes('Moira')) || voices.find(v => v.lang === 'en-US');
-  const jaVoice = voices.find(v => v.name.includes('Kyoko')) || voices.find(v => v.lang === 'ja-JP');
-  
-  // Speak segments ONE AT A TIME — wait for each to finish before the next.
-  // This avoids iOS dropping queued utterances.
-  let i = 0;
-  function speakNext() {
-    if (i >= segments.length) return;
-    const seg = segments[i];
-    i++;
-
-    const u = new SpeechSynthesisUtterance(seg);
-    const isJa = /[\u3040-\u30ff\u4e00-\u9faf]/.test(seg);
-    if (isJa) {
-      if (jaVoice) u.voice = jaVoice;
-      u.lang = 'ja-JP';
-      u.rate = 0.9;   // slower Japanese for learning
-    } else {
-      if (enVoice) u.voice = enVoice;
-      u.lang = 'en-US';
-      u.rate = 1.1;   // faster English
+        u.onend = speakNext;   // when this finishes, speak the next one
+        speechSynthesis.speak(u);
+      }
+      speakNext();
     }
 
-    u.onend = speakNext;   // when this finishes, speak the next one
-    speechSynthesis.speak(u);
-  }
-  speakNext();
-}
     async function send() {
-  const message = input.value.trim();
-  if (!message) return;
+      const message = input.value.trim();
+      if (!message) return;
 
-  speechSynthesis.speak(new SpeechSynthesisUtterance(''));  // wakes up iOS speech on the tap
+      speechSynthesis.speak(new SpeechSynthesisUtterance(''));  // wakes up iOS speech on the tap
 
-  chat.textContent += "You: " + message + "\n\n";
-  input.value = "";
-  sendBtn.disabled = true;
-  sendBtn.textContent = "Thinking...";
+      chat.textContent += "You: " + message + "\n\n";
+      input.value = "";
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Thinking...";
 
-  conversation.push({ role: "user", content: message });   // remember what you said
+      conversation.push({ role: "user", content: message });
 
-  try {
-    const res = await fetch(BRAIN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: conversation })     // send the WHOLE history
-    });
-    const data = await res.json();
-    const reply = data.reply;
+      try {
+        const res = await fetch(BRAIN_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: conversation })
+        });
+        const data = await res.json();
+        const reply = data.reply;
 
-    conversation.push({ role: "assistant", content: reply });  // remember the reply too
+        conversation.push({ role: "assistant", content: reply });
 
-    chat.textContent += "Tutor: " + reply + "\n\n";
-    speak(reply);
-  } catch (err) {
-    chat.textContent += "[Error reaching the brain: " + err.message + "]\n\n";
-  }
+        chat.textContent += "Tutor: " + reply + "\n\n";
+        speak(reply);
+      } catch (err) {
+        chat.textContent += "[Error reaching the brain: " + err.message + "]\n\n";
+      }
 
-  sendBtn.disabled = false;
-  sendBtn.textContent = "Send";
-}
+      sendBtn.disabled = false;
+      sendBtn.textContent = "Send";
+    }
+
     document.getElementById('listVoicesBtn').addEventListener('click', () => {
       const voices = speechSynthesis.getVoices();
       if (voices.length === 0) {
@@ -135,9 +118,8 @@
       document.getElementById('voiceList').textContent =
         "Found " + voices.length + " voices:\n\n" + list;
     });
-    
+
     sendBtn.addEventListener('click', send);
-    
   </script>
 </body>
 </html>
