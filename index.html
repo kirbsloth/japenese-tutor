@@ -25,7 +25,8 @@
     const sendBtn = document.getElementById('sendBtn');
     const chat    = document.getElementById('chat');
     let conversation = [];   // grows as you chat — this is the app's memory
-    
+
+    speechSynthesis.getVoices();
     // Reads text aloud automatically — the speechSynthesis we proved works on day one.
     function speak(text) {
   speechSynthesis.cancel();
